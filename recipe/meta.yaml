@@ -68,10 +68,10 @@ test:
 
 about:
   home: "https://github.com/sPHENIX-Collaboration/rcdaq"
-  # Upstream states no license (no LICENSE file, no notice in its own sources);
-  # the bundled mongoose web server is GPL-2.0 or commercial. To be settled
-  # with upstream before this is published.
-  license: LicenseRef-Unspecified
+  # Unconfirmed: upstream states no license (no LICENSE file, no notice in its
+  # own sources); the bundled mongoose web server is GPL-2.0 or commercial.
+  # Replace with the SPDX identifier once upstream confirms one.
+  license: LicenseRef-Unconfirmed
   summary: "RCDAQ: the data acquisition system of sPHENIX and EIC detector R&D"
 
 extra:
