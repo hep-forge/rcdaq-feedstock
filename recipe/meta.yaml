@@ -1,0 +1,79 @@
+{% set versions = {
+    "2026.10.16": "c725823a988e247050a1d648f89e78491fd5ec24",
+    "head": "HEAD",
+} %}
+
+{% set version = environ.get('COMMIT_VERSION', None) %}
+{% set version = version or versions.keys()|first %}
+{% set version = version|string %}
+
+{% set name = environ.get('ANACONDA_PACKAGE', 'rcdaq')|string|lower %}
+
+# RCDAQ, the data acquisition system of sPHENIX and of EIC detector R&D
+# (rcdaq_server, rcdaq_client, librcdaq and its plugin interface).
+# Upstream has no tags and calls itself 1.00 throughout: versions are the date
+# of the pinned upstream commit, and `head` builds upstream master.
+# Plain "#" comments only: the publish workflow's version trimming strips
+# {% %}/{{ }} and yaml-loads the rest.
+
+package:
+  name: {{ name }}
+  version: {{ environ.get('ANACONDA_VERSION', version)|replace("-", ".") }}
+
+source:
+  git_url: "https://github.com/sPHENIX-Collaboration/rcdaq.git"
+  git_rev: {{ versions.get(version, "HEAD") }}
+
+build:
+  number: 0
+  # Sun RPC server, libstdc++fs, -export-dynamic: Linux only so far
+  skip: true  # [not linux]
+  run_exports:
+    - {{ pin_subpackage(name, max_pin=None) }}
+
+requirements:
+  build:
+    - {{ compiler('c') }}
+    - {{ compiler('cxx') }}
+    - {{ stdlib('c') }}
+    - autoconf
+    - automake
+    - libtool
+    - make
+    # rpcgen, for the RPC stubs (rcdaq_rpc.x)
+    - rpcsvc-proto
+  host:
+    - libtirpc
+    - mosquitto   # MQTT status messages (optional upstream, found by its header)
+    - lzo
+    - bzip2
+  run:
+    - libtirpc
+    - mosquitto
+    - lzo
+    - bzip2
+
+test:
+  commands:
+    {% for exe in ["rcdaq_server", "rcdaq_client", "sfs", "elogtest"] %}
+    - test -x $PREFIX/bin/{{ exe }}
+    {% endfor %}
+    {% for lib in ["rcdaq", "rcdaqutils", "rcdaqplugin_example", "rcdaqplugin_gauss"] %}
+    - test -f $PREFIX/lib/lib{{ lib }}${SHLIB_EXT}
+    {% endfor %}
+    {% for h in ["daq_device.h", "rcdaq_plugin.h", "rcdaq_rpc.h", "TriggerHandler.h"] %}
+    - test -f $PREFIX/include/{{ h }}
+    {% endfor %}
+    - test -f $PREFIX/share/html/control.html
+
+about:
+  home: "https://github.com/sPHENIX-Collaboration/rcdaq"
+  # Upstream states no license (no LICENSE file, no notice in its own sources);
+  # the bundled mongoose web server is GPL-2.0 or commercial. To be settled
+  # with upstream before this is published.
+  license: LicenseRef-Unspecified
+  summary: "RCDAQ: the data acquisition system of sPHENIX and EIC detector R&D"
+
+extra:
+  recipe-maintainers:
+    - meiyasan
